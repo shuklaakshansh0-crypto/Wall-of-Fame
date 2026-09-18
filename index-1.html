@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wall of Fame</title>
+<meta name="description" content="A personal collection of favourite music, cinema, and television.">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,420;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="wall-header">
+    <h1>Wall of Fame</h1>
+  </header>
+
+  <main id="gallery" class="gallery" aria-live="polite"></main>
+
+  <nav class="tab-bar" aria-label="Choose a collection">
+    <div class="tab-bar__glow" aria-hidden="true"></div>
+    <button class="tab-btn active" data-medium="music" aria-current="true">Music</button>
+    <button class="tab-btn" data-medium="cinema">Cinema</button>
+    <button class="tab-btn" data-medium="tv">TV</button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>

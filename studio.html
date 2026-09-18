@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wall of Fame — Studio</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,420;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void: #08080b;
+  --void-deep: #050506;
+  --frame-light: #ddd0b0;
+  --frame-mid: #a5906c;
+  --frame-dark: #453b2c;
+  --ink: #f1ece0;
+  --ink-dim: #a39a8c;
+  --ink-faint: #6f6759;
+  --scrim: rgba(5, 5, 7, 0.58);
+  --radius-card: 22px;
+  --radius-window: 14px;
+  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --ease: cubic-bezier(.22,.61,.36,1);
+}
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; }
+body {
+  min-height:100vh; min-height:100dvh;
+  background: var(--void-deep);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing:antialiased;
+}
+input, textarea, button { font-family: inherit; }
+
+/* ---------- gate ---------- */
+.gate { min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px; }
+.gate__card { width:100%; max-width:380px; }
+.gate__card h1 { font-family:var(--font-display); font-size:1.6rem; margin:0 0 2px; }
+.gate__sub { color:var(--ink-dim); margin:0 0 26px; font-size:.95rem; }
+.gate__error { color:#e39a91; font-size:.85rem; margin:10px 0 0; }
+.gate__hint { color:var(--ink-faint); font-size:.78rem; line-height:1.5; margin-top:18px; }
+
+/* ---------- layout ---------- */
+.studio { max-width:520px; margin:0 auto; padding: max(24px, env(safe-area-inset-top)) 18px 120px; }
+.studio__header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:22px; }
+.studio__header h1 { font-family:var(--font-display); font-size:1.25rem; margin:0; }
+.studio__header h1 span { color:var(--ink-dim); font-weight:400; font-size:1rem; margin-left:6px; }
+
+.link-btn { background:none; border:none; color:var(--ink-faint); font-size:.82rem; padding:6px; text-decoration:underline; text-underline-offset:3px; }
+
+.medium-switch { display:flex; gap:6px; padding:4px; border-radius:14px; background:rgba(255,255,255,0.05); margin-bottom:26px; }
+.medium-btn { flex:1; border:none; background:transparent; color:var(--ink-dim); padding:11px 8px; border-radius:10px; font-size:.92rem; min-height:44px; }
+.medium-btn.active { background:var(--ink); color:var(--void-deep); }
+
+.panel { margin-bottom:34px; }
+.panel h2 { font-family:var(--font-display); font-size:1.05rem; font-weight:600; color:var(--ink-dim); margin:0 0 14px; }
+.panel__head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.panel__head h2 { margin:0; }
+
+/* ---------- fields ---------- */
+.field { display:block; margin-bottom:14px; }
+.field span { display:block; font-size:.8rem; color:var(--ink-dim); margin-bottom:6px; }
+.field input[type="text"],
+.field input[type="password"],
+.field input[type="number"],
+.field textarea,
+.field input[type="file"] {
+  width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
+  color:var(--ink); border-radius:12px; padding:12px 14px; font-size:.98rem; min-height:46px;
+}
+.field textarea { min-height:64px; resize:vertical; line-height:1.4; }
+.field input:focus, .field textarea:focus, button:focus-visible {
+  outline:2px solid var(--ink); outline-offset:1px;
+}
+.hint { font-size:.78rem; color:var(--ink-faint); margin:8px 0 0; }
+
+.btn {
+  border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); color:var(--ink);
+  padding:13px 20px; border-radius:12px; font-size:.96rem; min-height:48px; width:100%;
+}
+.btn--primary { background:var(--ink); color:var(--void-deep); border-color:transparent; font-weight:500; }
+.btn--small { width:auto; padding:9px 16px; min-height:38px; font-size:.85rem; }
+.btn:disabled { opacity:.5; }
+.form-actions { display:flex; flex-direction:column; gap:10px; margin-top:18px; }
+
+/* ---------- live preview (mirrors public card styling) ---------- */
+.preview-wrap { margin: 4px 0 20px; }
+.piece {
+  position:relative; border-radius:var(--radius-card); padding:3px;
+  background:linear-gradient(145deg, var(--frame-light), var(--frame-mid) 45%, var(--frame-dark));
+  box-shadow:0 16px 34px rgba(0,0,0,0.5), 0 2px 0 rgba(255,255,255,0.06) inset;
+  max-width:340px; margin:0 auto;
+}
+.piece__inner {
+  position:relative; overflow:hidden; border-radius:calc(var(--radius-card) - 3px);
+  padding:14px 14px 16px; background:linear-gradient(165deg, var(--c1,#2a2a2e), var(--c2,#48484e));
+}
+.piece__inner::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(112deg, transparent 28%, rgba(255,255,255,.16) 43%, rgba(255,255,255,.34) 49%, rgba(255,255,255,.14) 55%, transparent 70%);
+  mix-blend-mode:overlay; pointer-events:none;
+}
+.piece__window { position:relative; border-radius:var(--radius-window); overflow:hidden; margin-bottom:12px; background:#111; cursor:crosshair; }
+.piece__window.is-square { aspect-ratio:1/1; }
+.piece__window.is-wide { aspect-ratio:16/9; }
+.piece__window canvas { width:100%; height:100%; display:block; }
+.piece__plate { position:relative; padding:9px 12px 11px; border-radius:12px; background:var(--scrim); }
+.piece__title { font-family:var(--font-display); font-weight:600; font-size:1.08rem; margin:0 0 2px; color:var(--ink); }
+.piece__meta { font-family:var(--font-body); font-size:.82rem; color:var(--ink-dim); margin:0; }
+.piece__waveform { display:flex; align-items:flex-end; gap:2px; height:26px; margin-top:10px; }
+.piece__waveform span { flex:1 1 auto; min-width:2px; border-radius:2px; background:var(--ink); opacity:.7; }
+.piece__quote { font-family:var(--font-display); font-style:italic; font-size:.88rem; line-height:1.4; color:var(--ink); margin:10px 0 0; padding-left:10px; border-left:2px solid rgba(255,255,255,.3); }
+
+.color-picker { display:flex; gap:10px; margin-top:14px; max-width:340px; margin-left:auto; margin-right:auto; }
+.swatch { flex:1; display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04); color:var(--ink-dim); font-size:.82rem; }
+.swatch.active { border-color:var(--ink); color:var(--ink); }
+.swatch__chip { width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,.3); background:#111; flex-shrink:0; }
+
+/* ---------- entry list ---------- */
+.entry-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+.entry-list.is-busy { opacity:.5; pointer-events:none; }
+.entry-row { padding:12px; border-radius:14px; background:rgba(255,255,255,0.04); display:flex; flex-direction:column; gap:10px; }
+.entry-row--empty { color:var(--ink-faint); font-size:.9rem; text-align:center; padding:22px 0; background:none; }
+.entry-row__main { display:flex; align-items:center; gap:12px; }
+.entry-row__thumb { width:52px; height:52px; border-radius:8px; object-fit:cover; background:#111; flex-shrink:0; }
+.entry-row__info { min-width:0; }
+.entry-row__title { margin:0; font-family:var(--font-display); font-size:.98rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.entry-row__sub { margin:2px 0 0; font-size:.8rem; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.entry-row__actions { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+.icon-btn { min-height:40px; border-radius:10px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:var(--ink-dim); font-size:.8rem; }
+.icon-btn--danger { color:#e39a91; }
+.icon-btn:disabled { opacity:.3; }
+
+/* ---------- status toast ---------- */
+.status {
+  position:fixed; left:50%; bottom:max(18px, env(safe-area-inset-bottom)); transform:translateX(-50%);
+  background:rgba(20,20,24,0.9); color:var(--ink); border:1px solid rgba(255,255,255,.1);
+  padding:11px 20px; border-radius:999px; font-size:.85rem; box-shadow:0 12px 30px rgba(0,0,0,.5);
+  z-index:60; max-width:88vw; text-align:center;
+}
+.status--error { color:#e39a91; }
+
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <div class="gate__card">
+    <h1>Wall of Fame</h1>
+    <p class="gate__sub">Studio</p>
+    <label class="field">
+      <span>Personal access token</span>
+      <input type="password" id="tokenInput" autocomplete="off" placeholder="github_pat_…">
+    </label>
+    <button id="connectBtn" class="btn btn--primary">Connect</button>
+    <p id="gateError" class="gate__error" hidden></p>
+    <p class="gate__hint">Use a fine-grained token scoped only to this repository, with Contents permission set to Read and write. It's stored on this device only, never committed anywhere.</p>
+  </div>
+</div>
+
+<div id="studio" class="studio" hidden>
+  <header class="studio__header">
+    <h1>Wall of Fame <span>Studio</span></h1>
+    <button id="disconnectBtn" class="link-btn">Disconnect</button>
+  </header>
+
+  <nav class="medium-switch">
+    <button class="medium-btn active" data-medium="music">Music</button>
+    <button class="medium-btn" data-medium="cinema">Cinema</button>
+    <button class="medium-btn" data-medium="tv">TV</button>
+  </nav>
+
+  <section class="panel">
+    <h2 id="formTitle">Add to Music</h2>
+    <form id="entryForm">
+
+      <div class="preview-wrap">
+        <div class="piece" id="previewPiece" style="--c1:#2a2a2e;--c2:#48484e">
+          <div class="piece__inner">
+            <div class="piece__window is-square" id="windowShape">
+              <canvas id="cropCanvas" width="800" height="800"></canvas>
+            </div>
+            <div class="piece__plate">
+              <p class="piece__title" id="previewTitle">Title</p>
+              <p class="piece__meta" id="previewMeta">Artist — Year</p>
+              <div class="piece__waveform" id="previewWaveform"></div>
+              <p class="piece__quote" id="previewQuote" hidden></p>
+            </div>
+          </div>
+        </div>
+        <div class="color-picker">
+          <button type="button" class="swatch active" id="slot1Btn"><span class="swatch__chip" id="swatch1"></span>Colour 1</button>
+          <button type="button" class="swatch" id="slot2Btn"><span class="swatch__chip" id="swatch2"></span>Colour 2</button>
+        </div>
+        <p class="hint">Tap the image above to sample a colour into the selected slot.</p>
+      </div>
+
+      <label class="field">
+        <span>Cover image</span>
+        <input type="file" id="imageInput" accept="image/*">
+      </label>
+      <p class="hint" id="imageHint" hidden>Leave this blank to keep the current image.</p>
+
+      <label class="field">
+        <span>Title</span>
+        <input type="text" id="fieldTitle">
+      </label>
+
+      <div class="medium-fields" data-for="music">
+        <label class="field"><span>Artist</span><input type="text" id="fieldArtist"></label>
+        <label class="field"><span>Year</span><input type="text" id="fieldYearMusic" inputmode="numeric"></label>
+      </div>
+
+      <div class="medium-fields" data-for="cinema" hidden>
+        <label class="field"><span>Director</span><input type="text" id="fieldDirector"></label>
+        <label class="field"><span>Year</span><input type="text" id="fieldYearCinema" inputmode="numeric"></label>
+        <label class="field"><span>A line from the film</span><textarea id="fieldQuoteCinema" rows="2"></textarea></label>
+      </div>
+
+      <div class="medium-fields" data-for="tv" hidden>
+        <label class="field"><span>Creator</span><input type="text" id="fieldCreator"></label>
+        <label class="field"><span>Seasons</span><input type="number" id="fieldSeasons" min="1"></label>
+        <label class="field"><span>A line from the show</span><textarea id="fieldQuoteTv" rows="2"></textarea></label>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn--primary" id="submitBtn">Publish entry</button>
+        <button type="button" class="btn" id="cancelEditBtn" hidden>Cancel edit</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="panel__head">
+      <h2>Your entries</h2>
+      <button id="saveOrderBtn" class="btn btn--primary btn--small" hidden>Save order</button>
+    </div>
+    <ul id="entryList" class="entry-list"></ul>
+  </section>
+</div>
+
+<div id="status" class="status" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var REPO_OWNER = 'shuklaakshansh0-crypto';
+  var REPO_NAME = 'Wall-of-Fame';
+  var BRANCH = 'main';
+  var API_BASE = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME;
+  var TOKEN_KEY = 'wof_pat';
+
+  var MEDIA = ['music', 'cinema', 'tv'];
+  var IMAGE_SPECS = { music: { w: 800, h: 800 }, cinema: { w: 1280, h: 720 }, tv: { w: 1280, h: 720 } };
+
+  // ---------- generic helpers ----------
+  function escapeHtml(str) {
+    return String(str === null || str === undefined ? '' : str).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  }
+
+  function hashString(str) {
+    var h = 5381;
+    for (var i = 0; i < str.length; i++) { h = ((h << 5) + h) ^ str.charCodeAt(i); }
+    return h >>> 0;
+  }
+
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function generateWaveform(seedText, bars) {
+    bars = bars || 38;
+    var rand = mulberry32(hashString(seedText));
+    var freqA = 1.5 + rand() * 2.5, freqB = 3 + rand() * 4, phase = rand() * Math.PI * 2;
+    var heights = [];
+    for (var i = 0; i < bars; i++) {
+      var t = i / (bars - 1);
+      var envelope = Math.sin(Math.PI * t);
+      var wave = Math.sin(t * Math.PI * freqA + phase) * 0.5 + Math.sin(t * Math.PI * freqB) * 0.3;
+      var noise = (rand() - 0.5) * 0.35;
+      var h = 0.16 + envelope * (0.55 + wave * 0.3 + noise);
+      heights.push(Math.round(Math.max(0.08, Math.min(1, h)) * 100));
+    }
+    return heights;
+  }
+
+  function waveformHTML(seedText) {
+    return generateWaveform(seedText).map(function (h) { return '<span style="height:' + h + '%"></span>'; }).join('');
+  }
+
+  function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(function (v) { return v.toString(16).padStart(2, '0'); }).join('');
+  }
+
+  function utf8ToBase64(str) {
+    var bytes = new TextEncoder().encode(str);
+    var binary = '';
+    for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  }
+
+  function base64ToUtf8(b64) {
+    var binary = atob(b64.replace(/\s/g, ''));
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+
+  function blobToBase64(blob) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onloadend = function () { resolve(reader.result.split(',')[1]); };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  function label(m) { return m === 'tv' ? 'TV' : m.charAt(0).toUpperCase() + m.slice(1); }
+
+  // ---------- GitHub API ----------
+  var token = localStorage.getItem(TOKEN_KEY) || '';
+
+  function ghRequest(path, method, body) {
+    return fetch(API_BASE + path, {
+      method: method || 'GET',
+      headers: {
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (json) {
+        if (!res.ok) {
+          var err = new Error(json.message || ('GitHub API error (' + res.status + ')'));
+          err.status = res.status;
+          throw err;
+        }
+        return json;
+      });
+    });
+  }
+
+  function getFileSha(path) {
+    return ghRequest('/contents/' + path + '?ref=' + BRANCH).then(function (json) { return json.sha; });
+  }
+
+  // ---------- state ----------
+  var data = { music: [], cinema: [], tv: [] };
+  var dataSha = null;
+  var activeMedium = 'music';
+  var editingId = null;
+  var pendingImage = null;
+  var colors = { c1: null, c2: null };
+  var pickSlot = 1;
+  var orderDirty = false;
+
+  function loadData() {
+    return ghRequest('/contents/data.json?ref=' + BRANCH).then(function (json) {
+      dataSha = json.sha;
+      var parsed = JSON.parse(base64ToUtf8(json.content));
+      MEDIA.forEach(function (m) { data[m] = Array.isArray(parsed[m]) ? parsed[m] : []; });
+    });
+  }
+
+  function saveData(message) {
+    var content = utf8ToBase64(JSON.stringify(data, null, 2));
+    return ghRequest('/contents/data.json', 'PUT', { message: message, content: content, sha: dataSha, branch: BRANCH })
+      .then(function (json) { dataSha = json.content.sha; });
+  }
+
+  // ---------- DOM refs ----------
+  var gate = document.getElementById('gate');
+  var studio = document.getElementById('studio');
+  var tokenInput = document.getElementById('tokenInput');
+  var connectBtn = document.getElementById('connectBtn');
+  var gateError = document.getElementById('gateError');
+  var disconnectBtn = document.getElementById('disconnectBtn');
+
+  var entryForm = document.getElementById('entryForm');
+  var formTitle = document.getElementById('formTitle');
+  var submitBtn = document.getElementById('submitBtn');
+  var cancelEditBtn = document.getElementById('cancelEditBtn');
+  var imageInput = document.getElementById('imageInput');
+  var imageHint = document.getElementById('imageHint');
+  var cropCanvas = document.getElementById('cropCanvas');
+  var windowShape = document.getElementById('windowShape');
+
+  var previewPiece = document.getElementById('previewPiece');
+  var previewTitle = document.getElementById('previewTitle');
+  var previewMeta = document.getElementById('previewMeta');
+  var previewWaveform = document.getElementById('previewWaveform');
+  var previewQuote = document.getElementById('previewQuote');
+
+  var slot1Btn = document.getElementById('slot1Btn');
+  var slot2Btn = document.getElementById('slot2Btn');
+  var swatch1 = document.getElementById('swatch1');
+  var swatch2 = document.getElementById('swatch2');
+
+  var fieldTitle = document.getElementById('fieldTitle');
+  var fieldArtist = document.getElementById('fieldArtist');
+  var fieldYearMusic = document.getElementById('fieldYearMusic');
+  var fieldDirector = document.getElementById('fieldDirector');
+  var fieldYearCinema = document.getElementById('fieldYearCinema');
+  var fieldQuoteCinema = document.getElementById('fieldQuoteCinema');
+  var fieldCreator = document.getElementById('fieldCreator');
+  var fieldSeasons = document.getElementById('fieldSeasons');
+  var fieldQuoteTv = document.getElementById('fieldQuoteTv');
+
+  var entryList = document.getElementById('entryList');
+  var saveOrderBtn = document.getElementById('saveOrderBtn');
+  var statusEl = document.getElementById('status');
+  var statusTimer;
+
+  // ---------- status ----------
+  function showStatus(msg, isError, persist) {
+    statusEl.textContent = msg;
+    statusEl.hidden = false;
+    statusEl.classList.toggle('status--error', !!isError);
+    clearTimeout(statusTimer);
+    if (!persist) statusTimer = setTimeout(function () { statusEl.hidden = true; }, 2600);
+  }
+
+  // ---------- canvas / image handling ----------
+  function resetCanvasPlaceholder(medium) {
+    var spec = IMAGE_SPECS[medium];
+    cropCanvas.width = spec.w; cropCanvas.height = spec.h;
+    var ctx = cropCanvas.getContext('2d');
+    ctx.fillStyle = '#17171b';
+    ctx.fillRect(0, 0, spec.w, spec.h);
+  }
+
+  function loadExistingImageToCanvas(medium, path) {
+    var spec = IMAGE_SPECS[medium];
+    cropCanvas.width = spec.w; cropCanvas.height = spec.h;
+    var img = new Image();
+    img.onload = function () { cropCanvas.getContext('2d').drawImage(img, 0, 0, spec.w, spec.h); };
+    img.src = './' + path + '?t=' + Date.now();
+  }
+
+  function cropToCanvas(img, canvas, targetW, targetH) {
+    var targetRatio = targetW / targetH;
+    var srcRatio = img.naturalWidth / img.naturalHeight;
+    var sx, sy, sw, sh;
+    if (srcRatio > targetRatio) { sh = img.naturalHeight; sw = sh * targetRatio; sy = 0; sx = (img.naturalWidth - sw) / 2; }
+    else { sw = img.naturalWidth; sh = sw / targetRatio; sx = 0; sy = (img.naturalHeight - sh) / 2; }
+    canvas.width = targetW; canvas.height = targetH;
+    canvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH);
+  }
+
+  imageInput.addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      var spec = IMAGE_SPECS[activeMedium];
+      cropToCanvas(img, cropCanvas, spec.w, spec.h);
+      URL.revokeObjectURL(url);
+      cropCanvas.toBlob(function (blob) { pendingImage = blob; }, 'image/webp', 0.85);
+    };
+    img.src = url;
+  });
+
+  cropCanvas.addEventListener('click', function (e) {
+    var rect = cropCanvas.getBoundingClientRect();
+    if (!rect.width) return;
+    var x = Math.min(cropCanvas.width - 1, Math.max(0, Math.floor((e.clientX - rect.left) * (cropCanvas.width / rect.width))));
+    var y = Math.min(cropCanvas.height - 1, Math.max(0, Math.floor((e.clientY - rect.top) * (cropCanvas.height / rect.height))));
+    try {
+      var px = cropCanvas.getContext('2d').getImageData(x, y, 1, 1).data;
+      setColor(pickSlot, rgbToHex(px[0], px[1], px[2]));
+    } catch (err) { showStatus('Couldn\u2019t read a colour from that image.', true); }
+  });
+
+  slot1Btn.addEventListener('click', function () { pickSlot = 1; slot1Btn.classList.add('active'); slot2Btn.classList.remove('active'); });
+  slot2Btn.addEventListener('click', function () { pickSlot = 2; slot2Btn.classList.add('active'); slot1Btn.classList.remove('active'); });
+
+  function setColor(slot, hex) {
+    if (slot === 1) colors.c1 = hex; else colors.c2 = hex;
+    updateSwatches();
+    updateLivePreview();
+  }
+
+  function updateSwatches() {
+    swatch1.style.background = colors.c1 || '#111';
+    swatch2.style.background = colors.c2 || '#111';
+  }
+
+  // ---------- live preview ----------
+  function updateLivePreview() {
+    previewPiece.style.setProperty('--c1', colors.c1 || '#2a2a2e');
+    previewPiece.style.setProperty('--c2', colors.c2 || '#48484e');
+    var title = fieldTitle.value.trim() || 'Title';
+    previewTitle.textContent = title;
+
+    if (activeMedium === 'music') {
+      var artist = fieldArtist.value.trim() || 'Artist';
+      var year = fieldYearMusic.value.trim() || 'Year';
+      previewMeta.textContent = artist + ' — ' + year;
+      previewWaveform.innerHTML = waveformHTML(title + '|' + artist);
+      previewWaveform.hidden = false;
+      previewQuote.hidden = true;
+    } else {
+      var person = activeMedium === 'cinema' ? (fieldDirector.value.trim() || 'Director') : (fieldCreator.value.trim() || 'Creator');
+      var secondary = activeMedium === 'cinema'
+        ? (fieldYearCinema.value.trim() || 'Year')
+        : ((fieldSeasons.value.trim() || '—') + ' seasons');
+      previewMeta.textContent = person + ' — ' + secondary;
+      var quote = (activeMedium === 'cinema' ? fieldQuoteCinema.value : fieldQuoteTv.value).trim();
+      previewQuote.textContent = quote;
+      previewQuote.hidden = !quote;
+      previewWaveform.hidden = true;
+    }
+  }
+
+  ['fieldTitle', 'fieldArtist', 'fieldYearMusic', 'fieldDirector', 'fieldYearCinema', 'fieldQuoteCinema', 'fieldCreator', 'fieldSeasons', 'fieldQuoteTv']
+    .forEach(function (id) { document.getElementById(id).addEventListener('input', updateLivePreview); });
+
+  // ---------- medium switching ----------
+  function switchMedium(medium) {
+    activeMedium = medium;
+    document.querySelectorAll('.medium-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.medium === medium); });
+    document.querySelectorAll('.medium-fields').forEach(function (d) { d.hidden = d.dataset.for !== medium; });
+    windowShape.className = 'piece__window ' + (medium === 'music' ? 'is-square' : 'is-wide');
+    resetForm();
+    renderList();
+  }
+
+  document.querySelectorAll('.medium-btn').forEach(function (b) {
+    b.addEventListener('click', function () { switchMedium(b.dataset.medium); });
+  });
+
+  // ---------- form reset / edit ----------
+  function resetForm() {
+    editingId = null;
+    pendingImage = null;
+    entryForm.reset();
+    colors.c1 = null; colors.c2 = null;
+    pickSlot = 1;
+    slot1Btn.classList.add('active'); slot2Btn.classList.remove('active');
+    updateSwatches();
+    resetCanvasPlaceholder(activeMedium);
+    imageHint.hidden = true;
+    updateLivePreview();
+    formTitle.textContent = 'Add to ' + label(activeMedium);
+    submitBtn.textContent = 'Publish entry';
+    cancelEditBtn.hidden = true;
+  }
+
+  function startEdit(medium, id) {
+    var entry = data[medium].find(function (it) { return it.id === id; });
+    if (!entry) return;
+    editingId = id;
+    pendingImage = null;
+    fieldTitle.value = entry.title;
+    if (medium === 'music') { fieldArtist.value = entry.artist; fieldYearMusic.value = entry.year; }
+    else if (medium === 'cinema') { fieldDirector.value = entry.director; fieldYearCinema.value = entry.year; fieldQuoteCinema.value = entry.quote; }
+    else { fieldCreator.value = entry.creator; fieldSeasons.value = entry.seasons; fieldQuoteTv.value = entry.quote; }
+    colors.c1 = entry.color1; colors.c2 = entry.color2;
+    updateSwatches();
+    loadExistingImageToCanvas(medium, entry.image);
+    imageHint.hidden = false;
+    updateLivePreview();
+    formTitle.textContent = 'Editing';
+    submitBtn.textContent = 'Save changes';
+    cancelEditBtn.hidden = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelEditBtn.addEventListener('click', resetForm);
+
+  // ---------- submit ----------
+  function setFormBusy(busy) { submitBtn.disabled = busy; }
+
+  entryForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var medium = activeMedium;
+    var title = fieldTitle.value.trim();
+    if (!title) return showStatus('Title is required.', true);
+
+    var entry = { id: editingId || (medium + '-' + Date.now().toString(36)), title: title };
+
+    if (medium === 'music') {
+      entry.artist = fieldArtist.value.trim();
+      entry.year = fieldYearMusic.value.trim();
+      if (!entry.artist || !entry.year) return showStatus('Artist and year are required.', true);
+    } else if (medium === 'cinema') {
+      entry.director = fieldDirector.value.trim();
+      entry.year = fieldYearCinema.value.trim();
+      entry.quote = fieldQuoteCinema.value.trim();
+      if (!entry.director || !entry.year || !entry.quote) return showStatus('Director, year, and a quote are all required.', true);
+    } else {
+      entry.creator = fieldCreator.value.trim();
+      entry.seasons = fieldSeasons.value.trim();
+      entry.quote = fieldQuoteTv.value.trim();
+      if (!entry.creator || !entry.seasons || !entry.quote) return showStatus('Creator, seasons, and a quote are all required.', true);
+    }
+
+    if (!colors.c1 || !colors.c2) return showStatus('Pick both colours before publishing.', true);
+    entry.color1 = colors.c1; entry.color2 = colors.c2;
+
+    var isNew = !editingId;
+    if (isNew && !pendingImage) return showStatus('Choose a cover image first.', true);
+
+    setFormBusy(true);
+    showStatus(isNew ? 'Publishing…' : 'Saving…', false, true);
+
+    var chain;
+    if (isNew) {
+      var imagePath = 'assets/' + medium + '/' + entry.id + '.webp';
+      chain = blobToBase64(pendingImage).then(function (b64) {
+        return ghRequest('/contents/' + imagePath, 'PUT', { message: 'Add image for ' + title, content: b64, branch: BRANCH });
+      }).then(function () {
+        entry.image = imagePath;
+        data[medium].push(entry);
+        return saveData('Add entry: ' + title);
+      });
+    } else {
+      var existing = data[medium].find(function (it) { return it.id === editingId; });
+      entry.image = existing.image;
+      chain = Promise.resolve();
+      if (pendingImage) {
+        chain = chain.then(function () { return getFileSha(existing.image); })
+          .then(function (sha) { return blobToBase64(pendingImage).then(function (b64) { return { sha: sha, b64: b64 }; }); })
+          .then(function (r) {
+            return ghRequest('/contents/' + existing.image, 'PUT', { message: 'Update image for ' + title, content: r.b64, sha: r.sha, branch: BRANCH });
+          });
+      }
+      chain = chain.then(function () {
+        var idx = data[medium].findIndex(function (it) { return it.id === editingId; });
+        data[medium][idx] = entry;
+        return saveData('Update entry: ' + title);
+      });
+    }
+
+    chain.then(function () {
+      showStatus(isNew ? 'Added.' : 'Saved.', false);
+      resetForm();
+      renderList();
+    }).catch(function (err) {
+      showStatus('Couldn\u2019t save — ' + err.message, true);
+    }).finally(function () {
+      setFormBusy(false);
+    });
+  });
+
+  // ---------- list / reorder / delete ----------
+  function renderList() {
+    var items = data[activeMedium];
+    if (!items.length) {
+      entryList.innerHTML = '<li class="entry-row entry-row--empty">No entries yet.</li>';
+      saveOrderBtn.hidden = true;
+      return;
+    }
+    entryList.innerHTML = items.map(function (item, i) {
+      var sub = activeMedium === 'music' ? item.artist : (activeMedium === 'cinema' ? item.director : item.creator);
+      return (
+        '<li class="entry-row">' +
+          '<div class="entry-row__main">' +
+            '<img class="entry-row__thumb" src="./' + escapeHtml(item.image) + '?t=' + Date.now() + '" alt="">' +
+            '<div class="entry-row__info">' +
+              '<p class="entry-row__title">' + escapeHtml(item.title) + '</p>' +
+              '<p class="entry-row__sub">' + escapeHtml(sub) + '</p>' +
+            '</div>' +
+          '</div>' +
+          '<div class="entry-row__actions">' +
+            '<button type="button" class="icon-btn" data-act="up" data-id="' + item.id + '"' + (i === 0 ? ' disabled' : '') + '>Up</button>' +
+            '<button type="button" class="icon-btn" data-act="down" data-id="' + item.id + '"' + (i === items.length - 1 ? ' disabled' : '') + '>Down</button>' +
+            '<button type="button" class="icon-btn" data-act="edit" data-id="' + item.id + '">Edit</button>' +
+            '<button type="button" class="icon-btn icon-btn--danger" data-act="delete" data-id="' + item.id + '">Delete</button>' +
+          '</div>' +
+        '</li>'
+      );
+    }).join('');
+    saveOrderBtn.hidden = !orderDirty;
+  }
+
+  function moveEntry(index, dir) {
+    var arr = data[activeMedium];
+    var newIndex = index + dir;
+    if (newIndex < 0 || newIndex >= arr.length) return;
+    var tmp = arr[index]; arr[index] = arr[newIndex]; arr[newIndex] = tmp;
+    orderDirty = true;
+    renderList();
+  }
+
+  function deleteEntry(id) {
+    var medium = activeMedium;
+    var entry = data[medium].find(function (it) { return it.id === id; });
+    if (!entry) return;
+    entryList.classList.add('is-busy');
+    showStatus('Deleting…', false, true);
+    getFileSha(entry.image)
+      .then(function (sha) { return ghRequest('/contents/' + entry.image, 'DELETE', { message: 'Remove image for ' + entry.title, sha: sha, branch: BRANCH }); })
+      .then(function () {
+        data[medium] = data[medium].filter(function (it) { return it.id !== id; });
+        return saveData('Delete entry: ' + entry.title);
+      })
+      .then(function () {
+        showStatus('Deleted.', false);
+        if (editingId === id) resetForm();
+        renderList();
+      })
+      .catch(function (err) { showStatus('Couldn\u2019t delete — ' + err.message, true); })
+      .finally(function () { entryList.classList.remove('is-busy'); });
+  }
+
+  entryList.addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    var id = btn.dataset.id;
+    var idx = data[activeMedium].findIndex(function (it) { return it.id === id; });
+    if (btn.dataset.act === 'up') return moveEntry(idx, -1);
+    if (btn.dataset.act === 'down') return moveEntry(idx, 1);
+    if (btn.dataset.act === 'edit') return startEdit(activeMedium, id);
+    if (btn.dataset.act === 'delete') {
+      if (btn.dataset.confirm) { deleteEntry(id); }
+      else {
+        btn.dataset.confirm = '1'; btn.textContent = 'Sure?';
+        setTimeout(function () { btn.dataset.confirm = ''; btn.textContent = 'Delete'; }, 4000);
+      }
+    }
+  });
+
+  saveOrderBtn.addEventListener('click', function () {
+    saveOrderBtn.disabled = true;
+    showStatus('Saving order…', false, true);
+    saveData('Reorder ' + activeMedium)
+      .then(function () { orderDirty = false; showStatus('Order saved.', false); renderList(); })
+      .catch(function (err) { showStatus('Couldn\u2019t save order — ' + err.message, true); })
+      .finally(function () { saveOrderBtn.disabled = false; });
+  });
+
+  // ---------- auth ----------
+  function showStudio() { gate.hidden = true; studio.hidden = false; switchMedium('music'); }
+
+  connectBtn.addEventListener('click', function () {
+    var val = tokenInput.value.trim();
+    if (!val) return;
+    gateError.hidden = true;
+    connectBtn.disabled = true; connectBtn.textContent = 'Connecting…';
+    token = val;
+    ghRequest('').then(loadData).then(function () {
+      localStorage.setItem(TOKEN_KEY, token);
+      showStudio();
+    }).catch(function (err) {
+      token = '';
+      gateError.textContent = err.status === 404 ? 'That token doesn\u2019t have access to this repository.' : (err.message || 'Couldn\u2019t connect.');
+      gateError.hidden = false;
+    }).finally(function () {
+      connectBtn.disabled = false; connectBtn.textContent = 'Connect';
+    });
+  });
+
+  disconnectBtn.addEventListener('click', function () {
+    localStorage.removeItem(TOKEN_KEY);
+    token = ''; tokenInput.value = '';
+    studio.hidden = true; gate.hidden = false;
+  });
+
+  // ---------- init ----------
+  resetCanvasPlaceholder('music');
+  if (token) {
+    tokenInput.value = token;
+    tokenInput.disabled = true; connectBtn.disabled = true; connectBtn.textContent = 'Connecting…';
+    ghRequest('').then(loadData).then(showStudio).catch(function () {
+      localStorage.removeItem(TOKEN_KEY);
+      token = '';
+      tokenInput.value = ''; tokenInput.disabled = false;
+      connectBtn.disabled = false; connectBtn.textContent = 'Connect';
+      gateError.textContent = 'Your saved token no longer works — reconnect below.';
+      gateError.hidden = false;
+    });
+  }
+})();
+</script>
+</body>
+</html>
