@@ -1,5 +1,15 @@
 {
-  "music": [],
+  "music": [
+    {
+      "id": "music-mu8ibsxi",
+      "title": "I Appear Missing",
+      "artist": "Queens of the Stone Age",
+      "year": "2013",
+      "color1": "#f40242",
+      "color2": "#060910",
+      "image": "assets/music/music-mu8ibsxi.webp"
+    }
+  ],
   "cinema": [],
   "tv": []
 }
