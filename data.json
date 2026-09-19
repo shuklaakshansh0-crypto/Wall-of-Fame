@@ -10,6 +10,17 @@
       "image": "assets/music/music-mu8ibsxi.webp"
     }
   ],
-  "cinema": [],
+  "cinema": [
+    {
+      "id": "cinema-mu8ig6ud",
+      "title": "Uihij",
+      "director": "Ncjhh",
+      "year": "86868686",
+      "quote": ",trddjrjdrrjd",
+      "color1": "#261c26",
+      "color2": "#585858",
+      "image": "assets/cinema/cinema-mu8ig6ud.webp"
+    }
+  ],
   "tv": []
 }
